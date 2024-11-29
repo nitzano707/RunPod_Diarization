@@ -13,11 +13,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set environment variables
-      run: echo "RUNPOD_API_KEY=${{ secrets.RUNPOD_API_KEY }}" >> $GITHUB_ENV
+    - name: Inject RUNPOD_API_KEY into HTML
+      run: |
+        sed -i 's/YOUR_RUNPOD_API_KEY/${{ secrets.RUNPOD_API_KEY }}/g' path/to/your/index.html
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./
+        publish_dir: ./path/to/your/html/files
