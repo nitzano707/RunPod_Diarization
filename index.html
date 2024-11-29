@@ -18,50 +18,45 @@
     <script>
         async function uploadAudio() {
             const formData = new FormData(document.getElementById('uploadForm'));
-            const file = formData.get('audioFile');
-            const reader = new FileReader();
 
-            reader.onload = async function () {
-                try {
-                    const audioData = reader.result;
-
-                    const response = await fetch('https://api.runpod.ai/v2/YOUR_RUNPOD_ENDPOINT_ID/runsync', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': 'Bearer YOUR_RUNPOD_API_KEY',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            input: {
-                                audio_data: audioData.split(',')[1]
-                            }
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Error: ${response.statusText}`);
-                    }
-
-                    const result = await response.json();
-                    displayResult(result);
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    alert('Failed to upload and process audio.');
+            try {
+                // כאן אתה שולף את הטוקן בצורה בטוחה
+                const tokenResponse = await fetch('/get-token');
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to retrieve API token.');
                 }
-            };
+                const { runpodApiKey } = await tokenResponse.json();
 
-            reader.readAsDataURL(file);
+                // שליחת הבקשה עם הקובץ כנתונים בינאריים
+                const response = await fetch('https://api.runpod.ai/v2/YOUR_RUNPOD_ENDPOINT_ID/runsync', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${runpodApiKey}`
+                    },
+                    body: formData.get('audioFile')  // שליחת הקובץ כמו שהוא
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to upload and process audio.');
+            }
         }
 
         function displayResult(result) {
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
             
-            if (result.segments && result.segments.length > 0) {
-                result.segments.forEach(segment => {
-                    const segmentElement = document.createElement('p');
-                    segmentElement.textContent = `Speaker ${segment.speaker}: ${segment.start_time} - ${segment.end_time}`;
-                    resultsDiv.appendChild(segmentElement);
+            if (result.chunks && result.chunks.length > 0) {
+                result.chunks.forEach(chunk => {
+                    const chunkElement = document.createElement('p');
+                    chunkElement.textContent = `Text: ${chunk.text} (Start: ${chunk.timestamps[0]} - End: ${chunk.timestamps[1]})`;
+                    resultsDiv.appendChild(chunkElement);
                 });
             } else if (result.error) {
                 resultsDiv.textContent = `Error: ${result.error}`;
