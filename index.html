@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaker Diarization Upload</title>
+</head>
+<body>
+    <h1>Upload Audio File for Speaker Diarization</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="audioFile" name="audioFile" accept=".wav,.flac,.mp3,.m4a,.ogg" required>
+        <button type="button" onclick="uploadAudio()">Upload</button>
+    </form>
+
+    <h2>Results:</h2>
+    <div id="results"></div>
+
+    <script>
+        async function uploadAudio() {
+            const formData = new FormData(document.getElementById('uploadForm'));
+            const file = formData.get('audioFile');
+            const reader = new FileReader();
+
+            reader.onload = async function () {
+                try {
+                    const audioData = reader.result;
+
+                    const response = await fetch('https://api.runpod.ai/v2/YOUR_RUNPOD_ENDPOINT_ID/runsync', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer YOUR_RUNPOD_API_KEY',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            input: {
+                                audio_data: audioData.split(',')[1]
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    displayResult(result);
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Failed to upload and process audio.');
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function displayResult(result) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            if (result.segments && result.segments.length > 0) {
+                result.segments.forEach(segment => {
+                    const segmentElement = document.createElement('p');
+                    segmentElement.textContent = `Speaker ${segment.speaker}: ${segment.start_time} - ${segment.end_time}`;
+                    resultsDiv.appendChild(segmentElement);
+                });
+            } else if (result.error) {
+                resultsDiv.textContent = `Error: ${result.error}`;
+            } else {
+                resultsDiv.textContent = 'No results found.';
+            }
+        }
+    </script>
+</body>
+</html>
