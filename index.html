@@ -18,22 +18,15 @@
     <script>
         async function uploadAudio() {
             const formData = new FormData(document.getElementById('uploadForm'));
+            const file = formData.get('audioFile');
 
             try {
-                // כאן אתה שולף את הטוקן בצורה בטוחה
-                const tokenResponse = await fetch('/get-token');
-                if (!tokenResponse.ok) {
-                    throw new Error('Failed to retrieve API token.');
-                }
-                const { runpodApiKey } = await tokenResponse.json();
-
-                // שליחת הבקשה עם הקובץ כנתונים בינאריים
                 const response = await fetch('https://api.runpod.ai/v2/YOUR_RUNPOD_ENDPOINT_ID/runsync', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${runpodApiKey}`
+                        'Authorization': 'Bearer YOUR_RUNPOD_API_KEY'  // הסטרינג הזה יוחלף בזמן ה-build
                     },
-                    body: formData.get('audioFile')  // שליחת הקובץ כמו שהוא
+                    body: file
                 });
 
                 if (!response.ok) {
@@ -51,7 +44,7 @@
         function displayResult(result) {
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
-            
+
             if (result.chunks && result.chunks.length > 0) {
                 result.chunks.forEach(chunk => {
                     const chunkElement = document.createElement('p');
